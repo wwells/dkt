@@ -17,8 +17,8 @@ import numpy as np
 from keras.preprocessing import sequence
 from keras.utils import np_utils
 from keras.models import Sequential
-from keras.layers.core import TimeDistributedDense, Masking
-from keras.layers import LSTM
+from keras.layers.core import Masking
+from keras.layers import LSTM, Dense
 from keras import backend as K
 from sklearn.metrics import roc_auc_score
 import theano.tensor as Th
@@ -29,8 +29,8 @@ import argparse
 
 def main():
     parser = argparse.ArgumentParser(description='Process some integers.')
-    parser.add_argument('--dataset', type=str, help='Dataset file', default='assignments.txt')
-    parser.add_argument('--splitfile', type=str, help='Split file', default='assignments_split.txt')
+    parser.add_argument('--dataset', type=str, help='Dataset file', default='assistments.txt')
+    parser.add_argument('--splitfile', type=str, help='Split file', default='assistments_split.txt')
     parser.add_argument('--hiddenunits', type=int, help='Number of LSTM hidden units.',
                         default=200, required=False)
     parser.add_argument('--batchsize', type=int, help='Number of sequences to process in a batch.',
@@ -84,20 +84,25 @@ def main():
     model = Sequential()
 
     # ignore padding
-    model.add(Masking(-1.0, batch_input_shape=(batch_size, time_window, num_skills*2)))
+    model.add(Masking(-1.0, batch_input_shape=(batch_size, time_window, num_skills * 2)))
 
     # lstm configured to keep states between batches
-    model.add(LSTM(input_dim = num_skills*2,
-                   output_dim = hidden_units,
-                   return_sequences=True,
-                   batch_input_shape=(batch_size, time_window, num_skills*2),
-                   stateful = True
+    model.add(LSTM(
+        input_dim=num_skills * 2,
+        output_dim=hidden_units,
+        return_sequences=True,
+        batch_input_shape=(batch_size, time_window, num_skills * 2),
+        stateful=True
     ))
 
     # readout layer. TimeDistributedDense uses the same weights for all
     # time steps.
-    model.add(TimeDistributedDense(input_dim = hidden_units,
-        output_dim = num_skills, activation='sigmoid'))
+    # KA python upgrade note:   pushing to Dense, based on this thread: https://stackoverflow.com/a/52092176
+    model.add(Dense(
+        input_dim=hidden_units,
+        output_dim=num_skills,
+        activation='sigmoid')
+    )
 
     # optimize with rmsprop which dynamically adapts the learning
     # rate of each weight.
@@ -117,8 +122,8 @@ def main():
 
         rel_pred = np.sum(y_pred * skill, axis=2)
 
-        for b in xrange(0, X.shape[0]):
-            for t in xrange(0, X.shape[1]):
+        for b in range(0, X.shape[0]):
+            for t in range(0, X.shape[1]):
                 if X[b, t, 0] == -1.0:
                     continue
                 preds.append((rel_pred[b][t], obs[b][t]))
@@ -185,15 +190,15 @@ def run_func(seqs, num_skills, f, batch_size, time_window, batch_done = None):
     random.shuffle(seqs)
 
     processed = 0
-    for start_from in xrange(0, len(seqs), batch_size):
+    for start_from in range(0, len(seqs), batch_size):
        end_before = min(len(seqs), start_from + batch_size)
        x = []
        y = []
        for seq in seqs[start_from:end_before]:
            x_seq = []
            y_seq = []
-           xt_zeros = [0 for i in xrange(0, num_skills*2)]
-           ct_zeros = [0 for i in xrange(0, num_skills+1)]
+           xt_zeros = [0 for i in range(0, num_skills*2)]
+           ct_zeros = [0 for i in range(0, num_skills+1)]
            xt = xt_zeros[:]
            for skill, is_correct in seq:
                x_seq.append(xt)
@@ -215,19 +220,19 @@ def run_func(seqs, num_skills, f, batch_size, time_window, batch_done = None):
        maxlen = round_to_multiple(maxlen, time_window)
        # fill up the batch if necessary
        if len(x) < batch_size:
-            for e in xrange(0, batch_size - len(x)):
+            for e in range(0, batch_size - len(x)):
                 x_seq = []
                 y_seq = []
-                for t in xrange(0, time_window):
-                    x_seq.append([-1.0 for i in xrange(0, num_skills*2)])
-                    y_seq.append([0.0 for i in xrange(0, num_skills+1)])
+                for t in range(0, time_window):
+                    x_seq.append([-1.0 for i in range(0, num_skills*2)])
+                    y_seq.append([0.0 for i in range(0, num_skills+1)])
                 x.append(x_seq)
                 y.append(y_seq)
 
        X = pad_sequences(x, padding='post', maxlen = maxlen, dim=num_skills*2, value=-1.0)
        Y = pad_sequences(y, padding='post', maxlen = maxlen, dim=num_skills+1, value=-1.0)
 
-       for t in xrange(0, maxlen, time_window):
+       for t in range(0, maxlen, time_window):
            f(X[:,t:(t+time_window),:], Y[:,t:(t+time_window),:])
 
        processed += end_before - start_from
@@ -245,8 +250,8 @@ def load_dataset(dataset, split_file):
     with open(split_file, 'r') as f:
         student_assignment = f.read().split(' ')
 
-    training_seqs = [seqs[i] for i in xrange(0, len(seqs)) if student_assignment[i] == '1']
-    testing_seqs = [seqs[i] for i in xrange(0, len(seqs)) if student_assignment[i] == '0']
+    training_seqs = [seqs[i] for i in range(0, len(seqs)) if student_assignment[i] == '1']
+    testing_seqs = [seqs[i] for i in range(0, len(seqs)) if student_assignment[i] == '0']
 
     return training_seqs, testing_seqs, num_skills
 

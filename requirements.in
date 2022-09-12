@@ -2,7 +2,10 @@
 tensorflow==2.8
 theano==1.0.5
 scikit-learn==1.1.2
-numpy==1.23.3
+
+# to support use of Theano, which is deprecated, pinning to lower version of numpy
+# https://stackoverflow.com/a/71511053
+numpy<1.22
 
 # pinned for buffer issues
 protobuf==3.20
