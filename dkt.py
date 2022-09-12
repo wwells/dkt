@@ -70,15 +70,14 @@ def main():
     # y_true: (nsamples x nsteps x nskills+1)
     # y_pred: (nsamples x nsteps x nskills)
     def loss_function(y_true, y_pred):
-        skill = y_true[:,:,0:num_skills]
-        obs = y_true[:,:,num_skills]
+        skill = y_true[:, :, 0:num_skills]
+        obs = y_true[:, :, num_skills]
         rel_pred = Th.sum(y_pred * skill, axis=2)
 
         # keras implementation does a mean on the last dimension (axis=-1) which
         # it assumes is a singleton dimension. But in our context that would
         # be wrong.
         return K.binary_crossentropy(rel_pred, obs)
-
 
     # build model
     model = Sequential()
@@ -106,8 +105,11 @@ def main():
 
     # optimize with rmsprop which dynamically adapts the learning
     # rate of each weight.
-    model.compile(loss=loss_function,
-                optimizer='rmsprop',class_mode="binary")
+    model.compile(
+        loss=loss_function,
+        optimizer='rmsprop',
+        class_mode="binary"
+    )
 
     # training function
     def trainer(X, Y):
@@ -116,8 +118,8 @@ def main():
     # prediction
     def predictor(X, Y):
         batch_activations = model.predict_on_batch(X)
-        skill = Y[:,:,0:num_skills]
-        obs = Y[:,:,num_skills]
+        skill = Y[:, :, 0:num_skills]
+        obs = Y[:, :, num_skills]
         y_pred = np.squeeze(np.array(batch_activations))
 
         rel_pred = np.sum(y_pred * skill, axis=2)
@@ -178,10 +180,7 @@ def main():
         preds = []
 
 
-
-
-
-def run_func(seqs, num_skills, f, batch_size, time_window, batch_done = None):
+def run_func(seqs, num_skills, f, batch_size, time_window, batch_done=None):
 
     assert(min([len(s) for s in seqs]) > 0)
 
