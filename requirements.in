@@ -1,0 +1,8 @@
+#keras==2.9
+tensorflow==2.8
+theano==1.0.5
+scikit-learn==1.1.2
+numpy==1.23.3
+
+# pinned for buffer issues
+protobuf==3.20

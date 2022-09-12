@@ -1,1 +1,4 @@
 .DS_Store
+.vscode/*
+khan_deepkt.egg-info/*
+build/*
