@@ -13,6 +13,7 @@
 #
 import os
 import sys
+from tkinter import UNITS
 import numpy as np
 from keras.preprocessing import sequence
 from keras.utils import np_utils
@@ -31,8 +32,8 @@ def main():
     parser = argparse.ArgumentParser(description='Process some integers.')
     parser.add_argument('--dataset', type=str, help='Dataset file', default='assistments.txt')
     parser.add_argument('--splitfile', type=str, help='Split file', default='assistments_split.txt')
-    parser.add_argument('--hiddenunits', type=int, help='Number of LSTM hidden units.',
-                        default=200, required=False)
+    parser.add_argument('--lstmunits', type=int, help='Number of LSTM hidden units.',
+                        default=32, required=False)
     parser.add_argument('--batchsize', type=int, help='Number of sequences to process in a batch.',
                         default=5, required=False)
     parser.add_argument('--timewindow', type=int, help='Number of timesteps to process in a batch.',
@@ -43,7 +44,7 @@ def main():
 
     dataset = args.dataset
     split_file = args.splitfile
-    hidden_units = args.hiddenunits
+    lstm_units = args.lstmunits
     batch_size = args.batchsize
     time_window = args.timewindow
     epochs = args.epochs
@@ -72,7 +73,7 @@ def main():
     def loss_function(y_true, y_pred):
         skill = y_true[:, :, 0:num_skills]
         obs = y_true[:, :, num_skills]
-        rel_pred = Th.sum(y_pred * skill, axis=2)
+        rel_pred = Th.sum(float(y_pred) * float(skill), axis=2) # converted to float
 
         # keras implementation does a mean on the last dimension (axis=-1) which
         # it assumes is a singleton dimension. But in our context that would
@@ -87,20 +88,31 @@ def main():
 
     # lstm configured to keep states between batches
     model.add(LSTM(
+        units=lstm_units,
+        return_sequences=True
+    ))
+    '''
+        # the original settings for LSTM
+        # pinning keras, these are no longer available on the api
+
         input_dim=num_skills * 2,
         output_dim=hidden_units,
         return_sequences=True,
         batch_input_shape=(batch_size, time_window, num_skills * 2),
         stateful=True
-    ))
+    '''
 
     # readout layer. TimeDistributedDense uses the same weights for all
     # time steps.
     # KA python upgrade note:   pushing to Dense, based on this thread: https://stackoverflow.com/a/52092176
     model.add(Dense(
-        input_dim=hidden_units,
-        output_dim=num_skills,
+        units=32,  # NOTE: HARD CODING TO 32 during upgrade
         activation='sigmoid')
+        # these are the original values from TimeDistributedDense
+        # not options as params in the `Dense` api
+        #
+        # input_dim=hidden_units
+        # output_dim=num_skills,
     )
 
     # optimize with rmsprop which dynamically adapts the learning
@@ -108,7 +120,10 @@ def main():
     model.compile(
         loss=loss_function,
         optimizer='rmsprop',
-        class_mode="binary"
+        # these are the original values
+        # no longer available in updated compile api
+        #
+        # class_mode="binary"
     )
 
     # training function
