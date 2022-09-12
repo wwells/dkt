@@ -11,12 +11,8 @@
 #       dataset.txt.history training history (training LL, test AUC)
 #       dataset.txt.preds predictions for test trials
 #
-import os
-import sys
-from tkinter import UNITS
+
 import numpy as np
-from keras.preprocessing import sequence
-from keras.utils import np_utils
 from keras.models import Sequential
 from keras.layers.core import Masking
 from keras.layers import LSTM, Dense
@@ -73,7 +69,7 @@ def main():
     def loss_function(y_true, y_pred):
         skill = y_true[:, :, 0:num_skills]
         obs = y_true[:, :, num_skills]
-        rel_pred = Th.sum(float(y_pred) * float(skill), axis=2) # converted to float
+        rel_pred = Th.sum(float(y_pred) * float(skill), axis=2)  # converted to float
 
         # keras implementation does a mean on the last dimension (axis=-1) which
         # it assumes is a singleton dimension. But in our context that would
@@ -205,58 +201,60 @@ def run_func(seqs, num_skills, f, batch_size, time_window, batch_done=None):
 
     processed = 0
     for start_from in range(0, len(seqs), batch_size):
-       end_before = min(len(seqs), start_from + batch_size)
-       x = []
-       y = []
-       for seq in seqs[start_from:end_before]:
-           x_seq = []
-           y_seq = []
-           xt_zeros = [0 for i in range(0, num_skills*2)]
-           ct_zeros = [0 for i in range(0, num_skills+1)]
-           xt = xt_zeros[:]
-           for skill, is_correct in seq:
-               x_seq.append(xt)
+        end_before = min(len(seqs), start_from + batch_size)
+        x = []
+        y = []
+        for seq in seqs[start_from:end_before]:
+            x_seq = []
+            y_seq = []
+            xt_zeros = [0 for i in range(0, num_skills * 2)]
+            ct_zeros = [0 for i in range(0, num_skills + 1)]
+            xt = xt_zeros[:]
+            for skill, is_correct in seq:
+                x_seq.append(xt)
 
-               ct = ct_zeros[:]
-               ct[skill] = 1
-               ct[num_skills] = is_correct
-               y_seq.append(ct)
+                ct = ct_zeros[:]
+                ct[skill] = 1
+                ct[num_skills] = is_correct
+                y_seq.append(ct)
 
-               # one hot encoding of (last_skill, is_correct)
-               pos = skill * 2 + is_correct
-               xt = xt_zeros[:]
-               xt[pos] = 1
+                # one hot encoding of (last_skill, is_correct)
+                pos = skill * 2 + is_correct
+                xt = xt_zeros[:]
+                xt[pos] = 1
 
-           x.append(x_seq)
-           y.append(y_seq)
+            x.append(x_seq)
+            y.append(y_seq)
 
-       maxlen = max([len(s) for s in x])
-       maxlen = round_to_multiple(maxlen, time_window)
-       # fill up the batch if necessary
-       if len(x) < batch_size:
+        maxlen = max([len(s) for s in x])
+        maxlen = round_to_multiple(maxlen, time_window)
+        # fill up the batch if necessary
+        if len(x) < batch_size:
             for e in range(0, batch_size - len(x)):
                 x_seq = []
                 y_seq = []
                 for t in range(0, time_window):
-                    x_seq.append([-1.0 for i in range(0, num_skills*2)])
-                    y_seq.append([0.0 for i in range(0, num_skills+1)])
+                    x_seq.append([-1.0 for i in range(0, num_skills * 2)])
+                    y_seq.append([0.0 for i in range(0, num_skills + 1)])
                 x.append(x_seq)
                 y.append(y_seq)
 
-       X = pad_sequences(x, padding='post', maxlen = maxlen, dim=num_skills*2, value=-1.0)
-       Y = pad_sequences(y, padding='post', maxlen = maxlen, dim=num_skills+1, value=-1.0)
+        X = pad_sequences(x, padding='post', maxlen=maxlen, dim=num_skills * 2, value=-1.0)
+        Y = pad_sequences(y, padding='post', maxlen=maxlen, dim=num_skills + 1, value=-1.0)
 
-       for t in range(0, maxlen, time_window):
-           f(X[:,t:(t+time_window),:], Y[:,t:(t+time_window),:])
+        for t in range(0, maxlen, time_window):
+            f(X[:, t:(t + time_window), :], Y[:, t:(t + time_window), :])
 
-       processed += end_before - start_from
+        processed += end_before - start_from
 
-       # reset the states for the next batch of sequences
-       if batch_done:
-           batch_done((processed * 100.0) / len(seqs))
+        # reset the states for the next batch of sequences
+        if batch_done:
+            batch_done((processed * 100.0) / len(seqs))
+
 
 def round_to_multiple(x, base):
-    return int(base * math.ceil(float(x)/base))
+    return int(base * math.ceil(float(x) / base))
+
 
 def load_dataset(dataset, split_file):
     seqs, num_skills = read_file(dataset)
@@ -268,6 +266,7 @@ def load_dataset(dataset, split_file):
     testing_seqs = [seqs[i] for i in range(0, len(seqs)) if student_assignment[i] == '0']
 
     return training_seqs, testing_seqs, num_skills
+
 
 def read_file(dataset_path):
     seqs_by_student = {}
@@ -289,8 +288,7 @@ def read_file(dataset_path):
 
 
 # https://groups.google.com/forum/#!msg/keras-users/7sw0kvhDqCw/QmDMX952tq8J
-def pad_sequences(sequences, maxlen=None, dim=1, dtype='int32',
-    padding='pre', truncating='pre', value=0.):
+def pad_sequences(sequences, maxlen=None, dim=1, dtype='int32', padding='pre', truncating='pre', value=0.):
     '''
         Override keras method to allow multiple feature dimensions.
 
@@ -318,6 +316,7 @@ def pad_sequences(sequences, maxlen=None, dim=1, dtype='int32',
         else:
             raise ValueError("Padding type '%s' not understood" % padding)
     return x
+
 
 if __name__ == "__main__":
     main()
