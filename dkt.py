@@ -67,11 +67,13 @@ def main():
     # one-hot encoding of the skill at time t.
     # y_true: (nsamples x nsteps x nskills+1)
     # y_pred: (nsamples x nsteps x nskills)
+
     def loss_function(y_true, y_pred):
         skill = y_true[:, :, 0:num_skills]
         obs = y_true[:, :, num_skills]
         print(f"---in loss_function")
         print(f"--y_true: {y_true}")
+        print(f"evaluaging y_true: {y_true.eval()}")
         print(f"--y_pred: {y_pred}")
         print(f"--skill: {skill}")
         print(f"--obs: {obs}")
@@ -246,8 +248,10 @@ def run_func(seqs, num_skills, f, batch_size, time_window, batch_done=None):
                     y_seq.append([0.0 for i in range(0, num_skills + 1)])
                 x.append(x_seq)
                 y.append(y_seq)
-
+        print(f"----In pad_sequences X")
         X = pad_sequences(x, padding='post', maxlen=maxlen, dim=num_skills * 2, value=-1.0)
+        print(f"X after Pad Sequences:  {X}")
+        print(f"----In pad_sequences Y")
         Y = pad_sequences(y, padding='post', maxlen=maxlen, dim=num_skills + 1, value=-1.0)
 
         for t in range(0, maxlen, time_window):
@@ -307,19 +311,19 @@ def pad_sequences(sequences, maxlen=None, dim=1, dtype='int32', padding='pre', t
     nb_samples = len(sequences)
     if maxlen is None:
         maxlen = np.max(lengths)
-    print(f"---in pad_sequences:")
     #print(f"sequences: {sequences}")
     print(f"maxlen: {maxlen}")
     print(f"lengths: {lengths}")
     print(f"nb_samples: {nb_samples}")
 
     x = (np.ones((nb_samples, maxlen, dim)) * value).astype(dtype)
-    #print(f"x: {x}")
+    # print(f"x: {x}")
     for idx, s in enumerate(sequences):
         print("--in loop ")
         print(f"idx: {idx}")
 
         print(f"length of s: {len(s)}")
+        #print(f"s in loop: {s}")
         if truncating == 'pre':
             trunc = s[-maxlen:]
         elif truncating == 'post':
@@ -333,6 +337,13 @@ def pad_sequences(sequences, maxlen=None, dim=1, dtype='int32', padding='pre', t
             x[idx, -len(trunc):] = trunc
         else:
             raise ValueError("Padding type '%s' not understood" % padding)
+    # print(f"----final x: {x}")
+    #for ar in x:
+
+        #print(f"length of ar: {len(ar)}")
+        #print(f"ar: {ar}")
+        #for a in ar:
+        #    print(f"length of a: {len(a)}")
     return x
 
 

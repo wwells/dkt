@@ -19,6 +19,44 @@ b) run `pip-compile` after installing `pip-tools`
 Then when you run `pip3 install .` the setup.py for khan-deepkt reads the generated requirements.txt
 
 
+## Google Colab Use
+
+Commands for use in a collab notebook cell are as below:
+
+Install python 3.8
+```
+# Setup python 3.8
+
+!sudo apt-get update -y
+!sudo apt-get install python3.8
+
+#change alternatives
+!sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 1
+!sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8 2
+
+#check python version
+!python --version
+```
+
+Mount Gdrive
+```
+from google.colab import drive
+drive.mount('/content/gdrive')
+```
+
+Clone this repo into the gdrive
+```
+%cd gdrive/My Drive/
+! git clone https://github.com/wwells/dkt.git
+```
+
+Install python requirements
+```
+%cd dkt
+!ls
+!pip install -r requirements.txt
+```
+
 # Deep Knowledge Tracing Implementation
 This repository contains our implementation of the [Deep Knowledge Tracing (DKT)](http://papers.nips.cc/paper/5654-deep-knowledge-tracing.pdf) model
 which we used in [our paper](https://www.cs.colorado.edu/~mozer/Research/Selected%20Publications/reprints/KhajahLindseyMozer2016.pdf).
