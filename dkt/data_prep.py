@@ -88,6 +88,9 @@ def transform_data_alt(df, num_students, num_exercises, batch_size=32, mask_valu
     # and transforms it into something like this:
     #    student
     #    3               ([6, 9], [4, 3], [1, 1])
+    #
+    # of particular note is the time shifting the sequence done here to move exercise
+    # while keeping exercise / is_correct in place via slicing
     seq = df.groupby('student').apply(
         lambda r: (
             r['feat_exercise_with_answer'].values[:-1],
@@ -96,11 +99,52 @@ def transform_data_alt(df, num_students, num_exercises, batch_size=32, mask_valu
         )
     )
 
+    # Step 5 - Get Tensorflow Dataset
+    #
+    # this is where we generate tensors for each feature
+    # so for student 3 above it becomes:
+    #
+    # (<tf.Tensor: shape=(2,), dtype=int32, numpy=array([6, 9], dtype=int32)>,
+    #  <tf.Tensor: shape=(2,), dtype=int32, numpy=array([4, 3], dtype=int32)>,
+    #  <tf.Tensor: shape=(2,), dtype=float32, numpy=array([1., 1.], dtype=float32)>)
+    dataset = tf.data.Dataset.from_generator(
+        generator=lambda: seq,
+        output_types=(tf.int32, tf.int32, tf.float32)
+    )
 
-    print(seq)
+    if shuffle:
+        dataset = dataset.shuffle(buffer_size=num_students)
 
-    print(df.dtypes)
-    return df
+    # Step 6 - Encode categorical features and merge skills with labels to compute target loss.
+    # More info: https://github.com/tensorflow/tensorflow/issues/32142
+    #
+    # this is where we one-hot encode existing features based on the skill_depth
+    # now we have two tensors that represent the one-hot encoded exercise
+    #
+    # (<tf.Tensor: shape=(2, 13), dtype=float32, numpy=
+    #    array([[0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0.],
+    #    [0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0.]], dtype=float32)>,
+    #  <tf.Tensor: shape=(2, 8), dtype=float32, numpy=
+    #    array([[0., 0., 0., 0., 1., 0., 0., 1.],
+    #    [0., 0., 0., 1., 0., 0., 0., 1.]], dtype=float32)>)
+    features_depth = df['feat_exercise_with_answer'].max() + 1
+    exercise_depth = df['exercise'].max() + 1
+
+    dataset = dataset.map(
+        lambda feat, exercises, label: (
+            tf.one_hot(feat, depth=features_depth),
+            tf.concat(
+                values=[
+                    tf.one_hot(exercises, depth=exercise_depth),
+                    tf.expand_dims(label, -1)
+                ],
+                axis=-1
+            )
+        )
+    )
+
+    length = num_students // batch_size
+    return dataset, length, features_depth, exercise_depth
 
 
 

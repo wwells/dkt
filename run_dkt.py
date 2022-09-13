@@ -30,9 +30,26 @@ def run():
 
     print("\n-- TRANSFORMING DATA --\n")
 
-    trans_df = transform_data_alt(dataset, num_students=num_students, num_exercises=num_exercises)
+    trans_dataset, length, features_depth, exercise_depth = transform_data_alt(dataset, num_students=num_students, num_exercises=num_exercises)
 
-    print(trans_df)
+    print(f"trans_dataset: {trans_dataset}")
+    print(f"length: {length}")
+    print(f"features_depth: {features_depth}")
+    print(f"exercise_depth: {exercise_depth}")
+
+    elem = next(iter(trans_dataset))
+    print(elem)
+
+    elem2 = next(iter(trans_dataset))
+    print(elem2)
+
+    elem3 = next(iter(trans_dataset))
+    print(elem3)
+
+    elem4 = next(iter(trans_dataset))
+    print(elem4)
+
+
 
     # set up functions to transform train/test data in data_prep.py
     '''
