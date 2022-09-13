@@ -54,6 +54,7 @@ def main():
     history = []
 
     # load dataset
+    print(f"---Loading Dataset {dataset} and split_file {split_file}")
     training_seqs, testing_seqs, num_skills = load_dataset(dataset, split_file)
     print(f"Training Sequences: {len(training_seqs)}")
     print(f"Testing Sequences: {len(testing_seqs)}")
@@ -69,6 +70,11 @@ def main():
     def loss_function(y_true, y_pred):
         skill = y_true[:, :, 0:num_skills]
         obs = y_true[:, :, num_skills]
+        print(f"---in loss_function")
+        print(f"--y_true: {y_true}")
+        print(f"--y_pred: {y_pred}")
+        print(f"--skill: {skill}")
+        print(f"--obs: {obs}")
         rel_pred = Th.sum(float(y_pred) * float(skill), axis=2)  # converted to float
 
         # keras implementation does a mean on the last dimension (axis=-1) which
@@ -77,6 +83,8 @@ def main():
         return K.binary_crossentropy(rel_pred, obs)
 
     # build model
+
+    # TODO:  add comments for building model and outputing the shape
     model = Sequential()
 
     # ignore padding
@@ -299,9 +307,19 @@ def pad_sequences(sequences, maxlen=None, dim=1, dtype='int32', padding='pre', t
     nb_samples = len(sequences)
     if maxlen is None:
         maxlen = np.max(lengths)
+    print(f"---in pad_sequences:")
+    #print(f"sequences: {sequences}")
+    print(f"maxlen: {maxlen}")
+    print(f"lengths: {lengths}")
+    print(f"nb_samples: {nb_samples}")
 
     x = (np.ones((nb_samples, maxlen, dim)) * value).astype(dtype)
+    #print(f"x: {x}")
     for idx, s in enumerate(sequences):
+        print("--in loop ")
+        print(f"idx: {idx}")
+
+        print(f"length of s: {len(s)}")
         if truncating == 'pre':
             trunc = s[-maxlen:]
         elif truncating == 'post':
@@ -320,3 +338,19 @@ def pad_sequences(sequences, maxlen=None, dim=1, dtype='int32', padding='pre', t
 
 if __name__ == "__main__":
     main()
+
+    '''
+    dataset = 'assistments.txt'
+    split_file = 'assistments_split.txt'
+
+    overall_loss = [0.0]
+    preds = []
+    history = []
+
+    # load dataset
+    print(f"---Loading Dataset {dataset} and split_file {split_file}")
+    training_seqs, testing_seqs, num_skills = load_dataset(dataset, split_file)
+    print(f"Training Sequences: {len(training_seqs)}")
+    print(f"Testing Sequences: {len(testing_seqs)}")
+    print(f"Number of skills: {num_skills}")
+    '''
