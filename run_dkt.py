@@ -8,8 +8,9 @@ def run():
     # config
     print("-- APPLYING CONFIGURATION --\n")
     lstm_units = 32
-    # dataset = 'data/toy.txt'
-    dataset = 'data/assistments.txt'
+    time_shift = False
+    dataset = 'data/toy.txt'
+    # dataset = 'data/assistments.txt'
     test_split = .2
     val_split = .2
 
@@ -17,6 +18,7 @@ def run():
     verbosity = 2
     log_dir = 'logs'
     weights_dir = 'weights/bestmodel'
+
 
     # load data
     print("-- LOADING DATA --\n")
@@ -29,15 +31,16 @@ def run():
 
     print("\n-- TRANSFORMING DATA --\n")
 
-    trans_dataset, n_zero_batches, features_depth, exercise_depth = transform_data(dataset, num_students=num_students, num_exercises=num_exercises)
+    trans_dataset, n_zero_batches, features_depth, exercise_depth = transform_data(
+        dataset, num_students=num_students, num_exercises=num_exercises, time_shift=time_shift)
 
     print(f"number of batches (zero indexed): {n_zero_batches}")
     print(f"features_depth: {features_depth}")
     print(f"exercise_depth: {exercise_depth}")
 
     # For use in testing to review the transformed_data
-    # elem = next(iter(trans_dataset))
-    # print(elem)
+    elem = next(iter(trans_dataset))
+    print(elem)
 
     print("\n-- SPLITTING DATA --\n")
 
@@ -80,7 +83,7 @@ def run():
 
     print("\n-- TESTING MODEL --\n")
     model.load_weights(weights_dir)
-    model.evaluate(dataset=test_set, verbose=verbosity)
+    model.evaluate(test_set, verbose=verbosity)
 
     print("\n-- TESTING DONE --\n")
 

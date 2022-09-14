@@ -33,7 +33,7 @@ def read_file(dataset_path):
     return df, num_students, num_exercises
 
 
-def transform_data(df, num_students, num_exercises, batch_size=32, mask_value=-1.0, shuffle=True):
+def transform_data(df, num_students, num_exercises, batch_size=32, time_shift=True, mask_value=-1.0, shuffle=True):
 
     # Step 1.2 - Remove users with a single answer
     df = df.groupby('student').filter(lambda q: len(q) > 1).copy()
@@ -53,20 +53,33 @@ def transform_data(df, num_students, num_exercises, batch_size=32, mask_value=-1
     #      3         4           1                          9
     #      3         3           1                          7
     #
-    # and transforms it into something like this:
+    # and if the time_shift is applied, transforms it into something like this:
     #    student
     #    3               ([6, 9], [4, 3], [1, 1])
     #
     # of particular note is the time shifting the sequence done here to move exercise
     # while keeping exercise / is_correct in place via slicing
-    seq = df.groupby('student').apply(
-        lambda r: (
-            r['feat_exercise_with_answer'].values[:-1],
-            r['exercise'].values[1:],
-            r['is_correct'].values[1:],
+    if time_shift:
+        seq = df.groupby('student').apply(
+            lambda r: (
+                r['feat_exercise_with_answer'].values[:-1],
+                r['exercise'].values[1:],
+                r['is_correct'].values[1:],
+            )
         )
-    )
-
+    # and if the time_shift is not applied, transforms it into something like this:
+    #    student
+    #    3               ([6, 9, 7], [3, 4, 3], [0, 1, 1])
+    #
+    else:
+        seq = df.groupby('student').apply(
+            lambda r: (
+                r['feat_exercise_with_answer'].values,
+                r['exercise'].values,
+                r['is_correct'].values,
+            )
+        )
+    print(seq)
     # Step 5 - Get Tensorflow Dataset
     #
     # this is where we generate tensors for each feature
@@ -175,4 +188,3 @@ def split_dataset(dataset, n_zero_batches, test_fraction, val_fraction=None):
         train_set, val_set = split(train_set, val_size)
 
     return train_set, test_set, val_set
-
