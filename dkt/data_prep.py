@@ -25,17 +25,20 @@ def read_file(dataset_path):
     num_students = len(set(student_list))
     num_exercises = len(set(exercise_list))
 
+    # calculate the max sequence in the dataset
+    max_sequence = max(dict((x, student_list.count(x)) for x in set(student_list)).values())
+
     # create a pandas df
     df = pd.DataFrame(df_dict)
     df['student'] = df['student'].astype('int')
     df['exercise'] = df['exercise'].astype('int')
     df['is_correct'] = df['is_correct'].astype('int')
-    return df, num_students, num_exercises
+    return df, num_students, num_exercises, max_sequence
 
 
-def transform_data(df, num_students, num_exercises, batch_size=32, time_shift=True, mask_value=-1.0, shuffle=True):
+def transform_data(df, num_students, num_exercises, max_sequence, batch_size=32, time_shift=True, mask_value=-1.0, shuffle=True):
 
-    # Step 1.2 - Remove users with a single answer
+    # Step 1 - Remove users with a single answer
     df = df.groupby('student').filter(lambda q: len(q) > 1).copy()
 
     # Step 2 - Enumerate skill id (transforms dtype to an int64)
@@ -79,11 +82,11 @@ def transform_data(df, num_students, num_exercises, batch_size=32, time_shift=Tr
                 r['is_correct'].values,
             )
         )
-    print(seq)
+
     # Step 5 - Get Tensorflow Dataset
     #
     # this is where we generate tensors for each feature
-    # so for student 3 above it becomes:
+    # so for student 3 (timeshifted) above it becomes:
     #
     # (<tf.Tensor: shape=(2,), dtype=int32, numpy=array([6, 9], dtype=int32)>,
     #  <tf.Tensor: shape=(2,), dtype=int32, numpy=array([4, 3], dtype=int32)>,
@@ -104,6 +107,8 @@ def transform_data(df, num_students, num_exercises, batch_size=32, time_shift=Tr
     # an example for a dataset with only three questions, we would now have
     # now we have two tensors that represent the one-hot encoded exercise
     #
+    # the example below assumes the timeshifted student 3 from step 5
+    #
     # (<tf.Tensor: shape=(2, 13), dtype=float32, numpy=
     #    array([[0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0.],
     #    [0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0.]], dtype=float32)>,
@@ -113,7 +118,7 @@ def transform_data(df, num_students, num_exercises, batch_size=32, time_shift=Tr
     #
     # for more information see: https://www.tensorflow.org/versions/r2.8/api_docs/python/tf/one_hot
     features_depth = df['feat_exercise_with_answer'].max() + 1
-    exercise_depth = df['exercise'].max() + 1  # making it plus two here since we factorized this in step two which made it 0 indexed
+    exercise_depth = num_exercises
 
     dataset = dataset.map(
         lambda feat, exercises, label: (
@@ -135,9 +140,15 @@ def transform_data(df, num_students, num_exercises, batch_size=32, time_shift=Tr
     # make the sequences uniform in size base on the dataset seen
     # since student 1 may have only tried 10 problems
     # and student 2 may have tried 50
-    # the padded_shapes=([None, None], [None, None])
+    # the padded_shapes=([max_sequence, None], [max_sequence, None])
     # indicates that we're generating X and Y that to the "smallest size that fits"
     # https://github.com/tensorflow/tensorflow/blob/v2.8.0/tensorflow/python/data/ops/dataset_ops.py#L1811-L1817
+    #
+    # NOTE:  because the tf.Dataset generator here leverages lazy execution, we have to use a max_sequence for padding
+    # so that when we test it pads to the same level as on the training and validation set since this the shape our RNN expects.
+    # TODO(Walt):
+    #     when building out a transformer that goes in front of any predict functions, we need to
+    #     ensure that no sequence asked for prediction is > than our max_sequence value in training...
     #
     # in addition, any values that are padded are done so with default `mask_value`, which in this case is -1.
     #
@@ -152,7 +163,7 @@ def transform_data(df, num_students, num_exercises, batch_size=32, time_shift=Tr
     dataset = dataset.padded_batch(
         batch_size=batch_size,
         padding_values=(mask_value, mask_value),
-        padded_shapes=([None, None], [None, None]),
+        padded_shapes=([max_sequence, None], [max_sequence, None]),
     )
 
     # zero indexed number of batches in generator

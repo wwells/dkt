@@ -7,6 +7,24 @@ from keras import Input
 import tensorflow as tf
 
 
+def get_target(y_true, y_pred):
+    # Get skills and labels from y_true
+    mask = 1. - tf.cast(tf.equal(y_true, -1), y_true.dtype)
+    y_true = y_true * mask
+
+    skills, y_true = tf.split(y_true, num_or_size_splits=[-1, 1], axis=-1)
+
+    print(f"skills: {skills}")
+    print(f"y_true: {y_true}")
+    print(f"y_pred: {y_pred}")
+
+    # Get predictions for each skill
+    y_pred = tf.reduce_sum(y_pred * skills, axis=-1, keepdims=True)
+
+
+    return y_true, y_pred
+
+
 class DKTModel(tf.keras.Model):
     """ The Deep Knowledge Tracing model.
     Arguments in __init__:
@@ -51,17 +69,6 @@ class DKTModel(tf.keras.Model):
         """
 
         def custom_loss(y_true, y_pred):
-            def get_target(y_true, y_pred):
-                # Get skills and labels from y_true
-                mask = 1. - tf.cast(tf.equal(y_true, -1), y_true.dtype)
-                y_true = y_true * mask
-
-                skills, y_true = tf.split(y_true, num_or_size_splits=[-1, 1], axis=-1)
-
-                # Get predictions for each skill
-                y_pred = tf.reduce_sum(y_pred * skills, axis=-1, keepdims=True)
-
-                return y_true, y_pred
             y_true, y_pred = get_target(y_true, y_pred)
             return binary_crossentropy(y_true, y_pred)
 
@@ -154,7 +161,7 @@ class DKTModel(tf.keras.Model):
     def evaluate(self,
                  x,
                  y,
-                 batch_size,
+                 batch_size=32,
                  verbose=1,
                  sample_weight=None,
                  steps=None,
@@ -164,7 +171,7 @@ class DKTModel(tf.keras.Model):
         Computation is done in batches.
         Arguments:
             dataset: `tf.data` dataset. Should return a
-            tuple of `(inputs, (skills, targets))`.
+            tuple of `(inputs, (exercises, targets))`.
             verbose: 0 or 1. Verbosity mode.
                 0 = silent, 1 = progress bar.
             steps: Integer or `None`.

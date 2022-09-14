@@ -4,3 +4,4 @@ khan_deepkt.egg-info/*
 build/*
 logs/*
 weights/*
+test_predict.py
