@@ -26,10 +26,11 @@ TODO(WALT):
 * pull back in argparse
 * cleanup readme/repo flow
 * cleanup and add custom docstrings
-* try and rm virtual env, reinstall and confirm works
-* test on real khan data
 
-* generate a predict function (would likely need a transform input data pipeline)
+Eventually:
+* try and rm virtual env, reinstall and confirm works
+
+* generate a transform pipeline that we can use in front of a predict function
 
 ```sh
 python3 run_dkt.py [-h] --dataset DATASET

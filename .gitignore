@@ -5,3 +5,4 @@ build/*
 logs/*
 weights/*
 test_predict.py
+data/khan/*

@@ -1,4 +1,3 @@
-
 from keras.layers.core import Masking
 from keras.layers import LSTM, Dense
 from keras.losses import binary_crossentropy
@@ -14,13 +13,8 @@ def get_target(y_true, y_pred):
 
     skills, y_true = tf.split(y_true, num_or_size_splits=[-1, 1], axis=-1)
 
-    print(f"skills: {skills}")
-    print(f"y_true: {y_true}")
-    print(f"y_pred: {y_pred}")
-
     # Get predictions for each skill
     y_pred = tf.reduce_sum(y_pred * skills, axis=-1, keepdims=True)
-
 
     return y_true, y_pred
 
@@ -157,54 +151,3 @@ class DKTModel(tf.keras.Model):
                                          steps_per_epoch=steps_per_epoch,
                                          validation_steps=validation_steps,
                                          validation_freq=validation_freq)
-
-    def evaluate(self,
-                 x,
-                 y,
-                 batch_size=32,
-                 verbose=1,
-                 sample_weight=None,
-                 steps=None,
-                 callbacks=None,
-                 **kwargs):
-        """Returns the loss value & metrics values for the model in test mode.
-        Computation is done in batches.
-        Arguments:
-            dataset: `tf.data` dataset. Should return a
-            tuple of `(inputs, (exercises, targets))`.
-            verbose: 0 or 1. Verbosity mode.
-                0 = silent, 1 = progress bar.
-            steps: Integer or `None`.
-                Total number of steps (batches of samples)
-                before declaring the evaluation round finished.
-                Ignored with the default value of `None`.
-                If x is a `tf.data` dataset and `steps` is
-                None, 'evaluate' will run until the dataset is exhausted.
-                This argument is not supported with array inputs.
-            callbacks: List of `keras.callbacks.Callback` instances.
-                List of callbacks to apply during evaluation.
-                See [callbacks](/api_docs/python/tf/keras/callbacks).
-        Returns:
-            Scalar test loss (if the model has a single output and no metrics)
-            or list of scalars (if the model has multiple outputs
-            and/or metrics). The attribute `model.metrics_names` will give you
-            the display labels for the scalar outputs.
-        Raises:
-            ValueError: in case of invalid arguments.
-        """
-        return super(DKTModel, self).evaluate(
-            x=x,
-            y=y,
-            batch_size=batch_size,
-            verbose=verbose,
-            sample_weight=sample_weight,
-            steps=steps,
-            callbacks=callbacks,
-            **kwargs
-        )
-
-    def evaluate_generator(self, *args, **kwargs):
-        raise SyntaxError("Not supported")
-
-    def fit_generator(self, *args, **kwargs):
-        raise SyntaxError("Not supported")

@@ -3,14 +3,35 @@ import pandas as pd
 import numpy as np
 
 
+# hard coding to a single for the sake of prototyping
+BATCH_SIZE = 32
+
+
 def read_file(dataset_path):
+    """Reads in dataset and creates a pandas df summary metrics
+    Dataset expected format:
+    (student_id, exercise_id, is_correct)
+        1 2 1
+        1 3 0
+        2 2 0
+
+    NOTE:  This assumes a small dataset that can fit into
+    memory and live as a single file on disk.   Distributed methods
+    will need to be developed to train at scale.
+
+    Args:
+        dataset_path (_type_): location on disk of dataset
+    """
     student_list = []
     exercise_list = []
     is_correct_list = []
 
     with open(dataset_path, 'r') as f:
         for line in f:
-            student, problem, is_correct = line.strip().split(' ')
+            try:
+                student, problem, is_correct = line.strip().split(' ')
+            except ValueError:
+                student, problem, is_correct = line.strip().split(',')
             student_list.append(student)
             exercise_list.append(problem)
             is_correct_list.append(is_correct)
@@ -27,6 +48,7 @@ def read_file(dataset_path):
 
     # calculate the max sequence in the dataset
     max_sequence = max(dict((x, student_list.count(x)) for x in set(student_list)).values())
+    # max_sequence = 500
 
     # create a pandas df
     df = pd.DataFrame(df_dict)
@@ -36,10 +58,14 @@ def read_file(dataset_path):
     return df, num_students, num_exercises, max_sequence
 
 
-def transform_data(df, num_students, num_exercises, max_sequence, batch_size=32, time_shift=True, mask_value=-1.0, shuffle=True):
+def transform_data(df, num_students, num_exercises, max_sequence, batch_size=BATCH_SIZE, time_shift=True, mask_value=-1.0, shuffle=True):
 
-    # Step 1 - Remove users with a single answer
+    # Step 1.1 - Remove users with a single answer
     df = df.groupby('student').filter(lambda q: len(q) > 1).copy()
+
+    # TEMP:   TO SUPPORT PROTOTYPING, we'll create a cap here limit max_sequence.
+    # we've commented out the method to get an actual max_sequence in load_data and hard coded a value there
+    df = df.groupby('student').head(max_sequence).reset_index(drop=True)
 
     # Step 2 - Enumerate skill id (transforms dtype to an int64)
     df['exercise'], _ = pd.factorize(df['exercise'], sort=True)

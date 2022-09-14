@@ -10,17 +10,20 @@ def run():
     # config
     print("-- APPLYING CONFIGURATION --\n")
     lstm_units = 32
-    time_shift = False
-    dataset = 'data/toy.txt'
-    # dataset = 'data/assistments.txt'
-    test_split = .1
-    val_split = .1
+    time_shift = True  # shift the data of engineered feature and truth
 
-    epochs = 1
+    # dataset = 'data/toy.txt'
+    # dataset = 'data/khan/ka_lstm_df.csv'
+    dataset = 'data/khan/ka_lstm_df_big.txt'
+    #dataset = 'data/assistments.txt'
+
+    test_split = .1
+    val_split = .2
+
+    epochs = 10
     verbosity = 2
     log_dir = 'logs'
     weights_dir = 'weights/bestmodel'
-
 
     # load data
     print("-- LOADING DATA --\n")
@@ -30,6 +33,7 @@ def run():
     print(f"Total observations: {len(dataset)}")
     print(f"Total num_students: {num_students}")
     print(f"Total num_problems: {num_exercises}")
+    print(f"Max sequence:  {max_sequence}")
 
     print("\n-- TRANSFORMING DATA --\n")
 
@@ -52,10 +56,6 @@ def run():
         test_fraction=test_split,
         val_fraction=val_split
     )
-
-    print(f"train_set: {train_set}")
-    print(f"test_set: {test_set}")
-    print(f"val_set: {val_set}")
 
     print("\n-- COMPILING MODEL --\n")
 
@@ -93,18 +93,26 @@ def run():
     )
     print("\n-- TRAINING DONE --\n")
 
+
     print("\n-- TESTING MODEL --\n")
 
     model.load_weights(weights_dir)
-
-    # because we have a custom model subclass, we need to upack our test set
-    # in order to feed it into the evaluate function in the expected format
-    X_test = list(map(lambda x: x[0], test_set))
-    Y_test = list(map(lambda x: x[1], test_set))
-    model.evaluate(x=X_test, y=Y_test, verbose=verbosity)
+    model.evaluate(x=test_set, verbose=verbosity, batch_size=1)
 
     print("\n-- TESTING DONE --\n")
 
+
+    print("\n-- SINGLE PREDICTION EXAMPLE --\n")
+
+    X_test = tf.convert_to_tensor(list(map(lambda x: x[0], test_set)))
+    single_entry = X_test[:1][0][:1]
+    print(f"\nX for prediction shape: {single_entry.shape}")
+    print("X to predict: ")
+    print(single_entry)
+    prediction = model.predict(single_entry)
+    print(f"\nprediction shape: {prediction.shape}")
+    print("Prediction: ")
+    print(prediction)
 
 if __name__ == '__main__':
     run()
