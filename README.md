@@ -10,10 +10,16 @@ The following papers were used as primary inspiration:
 * https://home.cs.colorado.edu/~mozer/Research/Selected%20Publications/reprints/KhajahLindseyMozer2016.pdf
 
 
+TODO:
+* try and run in separate / distributed machines
+* generate a transform pipeline that we can use in front of a predict function
+* expand the read/load/transform data functions so we can use a much larger distributed dataset
+* configure GPU usage
+
 # Data Format
 
 We generally used the data format found in [mmkhajah's implementation](https://github.com/mmkhajah/dkt) which is a space separated text file
-where the first column is the student id, the second is the exercise_id, and the third is a boolean indicating whether the student got the question right.
+where the first column is the student id, the second is the skills_id, and the third is a boolean indicating whether the student got the question right.
 
 Where we deviate from that repo is there is no split file.   We handle the split programmatically.
 
@@ -21,21 +27,24 @@ There is a smaller toy dataset that is a subset of the larger assistments.txt av
 
 # Usage
 
-TODO(WALT):
-
-* pull back in argparse
-* cleanup readme/repo flow
-* cleanup and add custom docstrings
-
-Eventually:
-* try and rm virtual env, reinstall and confirm works
-
-* generate a transform pipeline that we can use in front of a predict function
-
 ```sh
-python3 run_dkt.py [-h] --dataset DATASET
-              [--lstmunits lstmUNITS] [--batchsize BATCHSIZE]
-              [--timewindow TIMEWINDOW] [--epochs EPOCHS]
+$ python3 run_dkt.py --help
+usage: Khan DKT Prototype [-h] [--dataset DATASET] [--lstm_units LSTM_UNITS] [--epochs EPOCHS] [--test_split TEST_SPLIT] [--val_split VAL_SPLIT]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --dataset DATASET     the path to the data on disk
+
+Model arguments.:
+  --lstm_units LSTM_UNITS
+                        number of units of the LSTM layer.
+
+Training arguments.:
+  --epochs EPOCHS       number of epochs to train.
+  --test_split TEST_SPLIT
+                        fraction of data to be used for testing (0, 1).
+  --val_split VAL_SPLIT
+                        fraction of data to be used for validation (0, 1).
 ```
 # Setup
 
