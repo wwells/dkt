@@ -24,15 +24,15 @@ class DKTModel(tf.keras.Model):
     """ Subclass of a Keras model that can be used to instantiate a DKT model
     """
 
-    def __init__(self, features_depth, skillss_depth, lstm_units):
+    def __init__(self, features_depth, skills_depth, lstm_units, dropout_rate):
 
         inputs = Input(shape=(None, features_depth), name='inputs')
 
         x = Masking(mask_value=-1)(inputs)
 
-        x = LSTM(lstm_units, return_sequences=True)(x)
+        x = LSTM(lstm_units, return_sequences=True, dropout=dropout_rate)(x)
 
-        outputs = Dense(skillss_depth, activation='sigmoid', name='dense_outputs')(x)
+        outputs = Dense(skills_depth, activation='sigmoid', name='dense_outputs')(x)
 
         super(DKTModel, self).__init__(inputs=inputs,
                                        outputs=outputs,

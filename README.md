@@ -29,7 +29,8 @@ There is a smaller toy dataset that is a subset of the larger assistments.txt av
 
 ```sh
 $ python3 run_dkt.py --help
-usage: Khan DKT Prototype [-h] [--dataset DATASET] [--lstm_units LSTM_UNITS] [--epochs EPOCHS] [--test_split TEST_SPLIT] [--val_split VAL_SPLIT]
+usage: Khan DKT Prototype [-h] [--dataset DATASET] [--lstm_units LSTM_UNITS] [--dropout_rate DROPOUT_RATE] [--epochs EPOCHS] [--test_split TEST_SPLIT]
+                          [--val_split VAL_SPLIT]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -38,6 +39,8 @@ optional arguments:
 Model arguments.:
   --lstm_units LSTM_UNITS
                         number of units of the LSTM layer.
+  --dropout_rate DROPOUT_RATE
+                        fraction of the units to drop.
 
 Training arguments.:
   --epochs EPOCHS       number of epochs to train.

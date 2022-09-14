@@ -23,6 +23,12 @@ def parse_args():
         default=100,
         help="number of units of the LSTM layer.")
 
+    model_group.add_argument(
+        "--dropout_rate",
+        type=float,
+        default=.2,
+        help="fraction of the units to drop.")
+
     train_group = parser.add_argument_group(title="Training arguments.")
     train_group.add_argument(
         "--epochs",
@@ -45,7 +51,7 @@ def parse_args():
     return parser.parse_args()
 
 
-def run(dataset, lstm_units, epochs, test_split, val_split):
+def run(dataset, lstm_units, dropout_rate, epochs, test_split, val_split):
     """simple wrapper to load data, train a DKT model, test the model
     and then an example for making a prediction for a single student by taking a row
     from the test_set"""
@@ -95,8 +101,9 @@ def run(dataset, lstm_units, epochs, test_split, val_split):
 
     model = DKTModel(
         features_depth=features_depth,
-        skillss_depth=skills_depth,
-        lstm_units=lstm_units
+        skills_depth=skills_depth,
+        lstm_units=lstm_units,
+        dropout_rate=dropout_rate
     )
 
     model.compile(
@@ -153,6 +160,7 @@ if __name__ == '__main__':
     run(
         dataset=args.dataset,
         lstm_units=args.lstm_units,
+        dropout_rate=args.dropout_rate,
         epochs=args.epochs,
         test_split=args.test_split,
         val_split=args.val_split
