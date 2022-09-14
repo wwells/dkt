@@ -24,10 +24,11 @@ There is a smaller toy dataset that is a subset of the larger assistments.txt av
 TODO(WALT):
 
 review implementation of evaluating test dataset
-try and rm virtual env, reinstall and confirm works
 pull back in argparse
 add back custom tf metrics
 cleanup readme/repo flow
+cleanup and add custom docstrings
+try and rm virtual env, reinstall and confirm works
 
 ```sh
 python3 run_dkt.py [-h] --dataset DATASET

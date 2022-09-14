@@ -4,7 +4,6 @@ from keras.layers import LSTM, Dense
 from keras.losses import binary_crossentropy
 from keras import Input
 
-
 import tensorflow as tf
 
 
@@ -21,14 +20,13 @@ class DKTModel(tf.keras.Model):
     """
 
     def __init__(self, features_depth, exercises_depth, lstm_units):
-        inputs = tf.keras.Input(shape=(None, features_depth), name='inputs')
+        inputs = Input(shape=(None, features_depth), name='inputs')
 
-        x = tf.keras.layers.Masking(mask_value=-1)(inputs)
+        x = Masking(mask_value=-1)(inputs)
 
-        x = tf.keras.layers.LSTM(lstm_units,
-                                 return_sequences=True)(x)
+        x = LSTM(lstm_units, return_sequences=True)(x)
 
-        outputs = tf.keras.layers.Dense(exercises_depth, activation='sigmoid', name='dense_outputs')(x)
+        outputs = Dense(exercises_depth, activation='sigmoid', name='dense_outputs')(x)
 
         super(DKTModel, self).__init__(inputs=inputs,
                                        outputs=outputs,

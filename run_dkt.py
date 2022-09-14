@@ -8,9 +8,8 @@ def run():
     # config
     print("-- APPLYING CONFIGURATION --\n")
     lstm_units = 32
-    #dataset = 'data/toy.txt'
+    # dataset = 'data/toy.txt'
     dataset = 'data/assistments.txt'
-    #split_file = 'data/toy_split.txt'
     test_split = .2
     val_split = .2
 
@@ -32,11 +31,11 @@ def run():
 
     trans_dataset, n_zero_batches, features_depth, exercise_depth = transform_data(dataset, num_students=num_students, num_exercises=num_exercises)
 
-    #print(f"trans_dataset: {trans_dataset}")
     print(f"number of batches (zero indexed): {n_zero_batches}")
     print(f"features_depth: {features_depth}")
     print(f"exercise_depth: {exercise_depth}")
 
+    # For use in testing to review the transformed_data
     # elem = next(iter(trans_dataset))
     # print(elem)
 
@@ -48,9 +47,6 @@ def run():
         test_fraction=test_split,
         val_fraction=val_split
     )
-    # get num_skills and input_shape from data
-    # elem = next(iter(train_set))
-    # print(elem)
 
     print("\n-- COMPILING MODEL --\n")
 
@@ -77,17 +73,16 @@ def run():
             tf.keras.callbacks.CSVLogger(f"{log_dir}/train.log"),
             tf.keras.callbacks.ModelCheckpoint(weights_dir, save_best_only=True, save_weights_only=True),
             tf.keras.callbacks.TensorBoard(log_dir=log_dir)
-    ])
+        ]
+    )
 
     print("\n-- TRAINING DONE --\n")
-
 
     print("\n-- TESTING MODEL --\n")
     model.load_weights(weights_dir)
     model.evaluate(dataset=test_set, verbose=verbosity)
 
     print("\n-- TESTING DONE --\n")
-
 
 
 if __name__ == '__main__':
