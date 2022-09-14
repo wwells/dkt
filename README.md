@@ -50,11 +50,10 @@ pip3 install .
 ## Managing Python Libraries
 
 Libraries are pinned using `pip-compile`.   If you need to increment any libraries you can:
-a) change then in the requirements.in
-b) run `pip-compile` after installing `pip-tools`
+* change them in the requirements.in
+* run `pip-compile` after installing `pip-tools`
 
 Then when you run `pip3 install .` the setup.py for khan-deepkt reads the generated requirements.txt
-
 
 ## Google Colab Use
 
