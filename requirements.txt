@@ -61,7 +61,6 @@ numpy==1.21.6
     #   scipy
     #   tensorboard
     #   tensorflow
-    #   theano
 oauthlib==3.2.1
     # via requests-oauthlib
 opt-einsum==3.3.0
@@ -94,9 +93,7 @@ rsa==4.9
 scikit-learn==1.1.2
     # via -r requirements.in
 scipy==1.9.1
-    # via
-    #   scikit-learn
-    #   theano
+    # via scikit-learn
 six==1.16.0
     # via
     #   astunparse
@@ -106,7 +103,6 @@ six==1.16.0
     #   keras-preprocessing
     #   python-dateutil
     #   tensorflow
-    #   theano
 tensorboard==2.8.0
     # via tensorflow
 tensorboard-data-server==0.6.1
@@ -121,8 +117,6 @@ termcolor==2.0.1
     # via tensorflow
 tf-estimator-nightly==2.8.0.dev2021122109
     # via tensorflow
-theano==1.0.5
-    # via -r requirements.in
 threadpoolctl==3.1.0
     # via scikit-learn
 typing-extensions==4.3.0

@@ -2,3 +2,5 @@
 .vscode/*
 khan_deepkt.egg-info/*
 build/*
+logs/*
+weights/*

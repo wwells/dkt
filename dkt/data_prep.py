@@ -1,42 +1,9 @@
 import tensorflow as tf
 import pandas as pd
-
 import numpy as np
 
 
-def load_dataset(dataset, split_file):
-    seqs, num_skills, num_students = read_file(dataset)
-
-    with open(split_file, 'r') as f:
-        student_assignment = f.read().split(' ')
-
-    training_seqs = [seqs[i] for i in range(0, len(seqs)) if student_assignment[i] == '1']
-    testing_seqs = [seqs[i] for i in range(0, len(seqs)) if student_assignment[i] == '0']
-
-    return training_seqs, testing_seqs, num_skills, num_students
-
-
 def read_file(dataset_path):
-    seqs_by_student = {}
-    problem_ids = {}
-    next_problem_id = 0
-    with open(dataset_path, 'r') as f:
-        for line in f:
-            student, problem, is_correct = line.strip().split(' ')
-            student = int(student)
-            if student not in seqs_by_student:
-                seqs_by_student[student] = []
-            if problem not in problem_ids:
-                problem_ids[problem] = next_problem_id
-                next_problem_id += 1
-            seqs_by_student[student].append((problem_ids[problem], int(is_correct == '1')))
-
-    sorted_keys = sorted(seqs_by_student.keys())
-    num_students = len(seqs_by_student)
-    return [seqs_by_student[k] for k in sorted_keys], next_problem_id, num_students
-
-
-def read_file_alt(dataset_path):
     student_list = []
     exercise_list = []
     is_correct_list = []
@@ -65,7 +32,8 @@ def read_file_alt(dataset_path):
     df['is_correct'] = df['is_correct'].astype('int')
     return df, num_students, num_exercises
 
-def transform_data_alt(df, num_students, num_exercises, batch_size=32, mask_value=-1.0, shuffle=True):
+
+def transform_data(df, num_students, num_exercises, batch_size=32, mask_value=-1.0, shuffle=True):
 
     # Step 1.2 - Remove users with a single answer
     df = df.groupby('student').filter(lambda q: len(q) > 1).copy()
@@ -119,6 +87,8 @@ def transform_data_alt(df, num_students, num_exercises, batch_size=32, mask_valu
     # More info: https://github.com/tensorflow/tensorflow/issues/32142
     #
     # this is where we one-hot encode existing features based on the skill_depth
+    # for each exercise, we generate two encodings representing correct/not_correct
+    # an example for a dataset with only three questions, we would now have
     # now we have two tensors that represent the one-hot encoded exercise
     #
     # (<tf.Tensor: shape=(2, 13), dtype=float32, numpy=
@@ -127,8 +97,10 @@ def transform_data_alt(df, num_students, num_exercises, batch_size=32, mask_valu
     #  <tf.Tensor: shape=(2, 8), dtype=float32, numpy=
     #    array([[0., 0., 0., 0., 1., 0., 0., 1.],
     #    [0., 0., 0., 1., 0., 0., 0., 1.]], dtype=float32)>)
+    #
+    # for more information see: https://www.tensorflow.org/versions/r2.8/api_docs/python/tf/one_hot
     features_depth = df['feat_exercise_with_answer'].max() + 1
-    exercise_depth = df['exercise'].max() + 1
+    exercise_depth = df['exercise'].max() + 1  # making it plus two here since we factorized this in step two which made it 0 indexed
 
     dataset = dataset.map(
         lambda feat, exercises, label: (
@@ -143,49 +115,64 @@ def transform_data_alt(df, num_students, num_exercises, batch_size=32, mask_valu
         )
     )
 
-    length = num_students // batch_size
-    return dataset, length, features_depth, exercise_depth
-
-
-
-def transform_data(seqs, num_students, num_skills, batch_size=32, mask_value=-1.0, shuffle=True):
-    # go back to lacase grande and review what format we need for the seq generator
-
-    # experiment:   once we load correctly, can we feed in after
-
-    dataset = tf.data.Dataset.from_tensors(
-        tensors=seqs,
-        output_types=(tf.int32, tf.int32, tf.float32)
-    )
-    if shuffle:
-        dataset = dataset.shuffle(buffer_size=num_students)
-
-
-    # Step 6 - Encode categorical features and merge skills with labels to compute target loss.
-    # More info: https://github.com/tensorflow/tensorflow/issues/32142
-    features_depth = num_skills * 2 + 1
-    skill_depth = num_skills + 1
-
-    dataset = dataset.map(
-        lambda feat, skill, label: (
-            tf.one_hot(feat, depth=features_depth),
-            tf.concat(
-                values=[
-                    tf.one_hot(skill, depth=skill_depth),
-                    tf.expand_dims(label, -1)
-                ],
-                axis=-1
-            )
-        )
-    )
     # Step 7 - Pad sequences per batch
+    # https://www.tensorflow.org/versions/r2.8/api_docs/python/tf/data/Dataset#padded_batch
+    #
+    # here we create batches, all while using the Dataset.padded_batch function
+    # make the sequences uniform in size base on the dataset seen
+    # since student 1 may have only tried 10 problems
+    # and student 2 may have tried 50
+    # the padded_shapes=([None, None], [None, None])
+    # indicates that we're generating X and Y that to the "smallest size that fits"
+    # https://github.com/tensorflow/tensorflow/blob/v2.8.0/tensorflow/python/data/ops/dataset_ops.py#L1811-L1817
+    #
+    # in addition, any values that are padded are done so with default `mask_value`, which in this case is -1.
+    #
+    # at the end we have a batch to be submitted to the model that looks roughly like:
+    #
+    # ( # First Tensor is X
+    #   tf.Tensor: shape=(n_users_in_batch, number of sequences in batch, features_depth), dtype=float32,
+    #   numpy=array (...like above shape.... ))
+    #   # Second Tensor is Y
+    #   tf.Tensor: shape=(n_users_in_batch, number of sequences in batch, exercise_depth + (since zero indexed)), dtype=float32,
+    #   nump=array (...like above shape.... ))
     dataset = dataset.padded_batch(
         batch_size=batch_size,
         padding_values=(mask_value, mask_value),
         padded_shapes=([None, None], [None, None]),
-        drop_remainder=True
     )
 
-    length = num_students // batch_size
+    # zero indexed number of batches in generator
+    n_zero_batches = num_students // batch_size
 
-    return dataset, length, features_depth, skill_depth
+    return dataset, n_zero_batches, features_depth, exercise_depth
+
+
+def split_dataset(dataset, n_zero_batches, test_fraction, val_fraction=None):
+    def split(dataset, split_size):
+        split_set = dataset.take(split_size)
+        dataset = dataset.skip(split_size)
+        return dataset, split_set
+
+    if not 0 < test_fraction < 1:
+        raise ValueError("test_fraction must be between (0, 1)")
+
+    if val_fraction is not None and not 0 < val_fraction < 1:
+        raise ValueError("val_fraction must be between (0, 1)")
+
+    test_size = np.ceil(test_fraction * n_zero_batches)
+    train_size = n_zero_batches - test_size
+
+    if test_size == 0 or train_size == 0:
+        raise ValueError(
+            "The train and test datasets must have at least 1 element. Reduce the split fraction or get more data.")
+
+    train_set, test_set = split(dataset, test_size)
+
+    val_set = None
+    if val_fraction:
+        val_size = np.ceil(train_size * val_fraction)
+        train_set, val_set = split(train_set, val_size)
+
+    return train_set, test_set, val_set
+
