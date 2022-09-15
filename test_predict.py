@@ -17,9 +17,9 @@ def main():
     features_depth = 312
     skills_depth = 156
     max_sequence = 499
-    num_students = 9423
+    num_students = 9422 
 
-    lstm_units = 100
+    lstm_units = 312
     dropout_rate = .2
 
     weights_dir = 'weights/bestmodel'
