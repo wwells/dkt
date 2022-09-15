@@ -68,17 +68,17 @@ def run(dataset, lstm_units, dropout_rate, epochs, test_split, val_split):
     # load data
     print("-- LOADING DATA --\n")
     print(f"Loading Dataset {dataset}")
-    dataset, num_students, num_skillss, max_sequence = read_file(dataset)
+    dataset, num_students, num_skills, max_sequence = read_file(dataset)
 
     print(f"Total observations: {len(dataset)}")
     print(f"Total num_students: {num_students}")
-    print(f"Total num_problems: {num_skillss}")
+    print(f"Total num_skills: {num_skills}")
     print(f"Max sequence:  {max_sequence}")
 
     print("\n-- TRANSFORMING DATA --\n")
 
     trans_dataset, n_zero_batches, features_depth, skills_depth = transform_data(
-        dataset, num_students=num_students, num_skillss=num_skillss, max_sequence=max_sequence, time_shift=time_shift)
+        dataset, num_students=num_students, num_skillss=num_skills, max_sequence=max_sequence, time_shift=time_shift)
 
     print(f"number of batches (zero indexed): {n_zero_batches}")
     print(f"features_depth: {features_depth}")

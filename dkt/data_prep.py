@@ -44,7 +44,7 @@ def read_file(dataset_path):
 
     # calculate the number of students and problems in the dataset
     num_students = len(set(student_list))
-    num_skillss = len(set(skills_list))
+    num_skills = len(set(skills_list))
 
     # calculate the max sequence in the dataset
     max_sequence = max(dict((x, student_list.count(x)) for x in set(student_list)).values())
@@ -55,10 +55,13 @@ def read_file(dataset_path):
     df['student'] = df['student'].astype('int')
     df['skills'] = df['skills'].astype('int')
     df['is_correct'] = df['is_correct'].astype('int')
-    return df, num_students, num_skillss, max_sequence
+    return df, num_students, num_skills, max_sequence
 
 
-def transform_data(df, num_students, num_skillss, max_sequence, batch_size=BATCH_SIZE, time_shift=True, mask_value=-1.0, shuffle=True):
+def transform_data(
+    df, num_students, num_skills, max_sequence, batch_size=BATCH_SIZE,
+    time_shift=True, mask_value=-1.0, shuffle=True, features_depth=None
+):
     """generates a tensorflow dataset generator that can be used for modeling
     NOTE:  is not a fully functional transform pipeline that can be used for transforming training data and
            operational data.   There are big nuances/gotchas there around the padded sequence vectors that might make
@@ -148,8 +151,12 @@ def transform_data(df, num_students, num_skillss, max_sequence, batch_size=BATCH
     #    [0., 0., 0., 1., 0., 0., 0., 1.]], dtype=float32)>)
     #
     # for more information see: https://www.tensorflow.org/versions/r2.8/api_docs/python/tf/one_hot
-    features_depth = df['feat_skills_with_answer'].max() + 1
-    skills_depth = num_skillss
+
+    # if we are using the test_predict, we can pass in our known features depth here, vs trying to dynamically generate it
+    # while transforming.   if we do not do this, the input layer will reject the new observation as it doesn't have the expected shape
+    if not features_depth:
+        features_depth = df['feat_skills_with_answer'].max() + 1
+    skills_depth = num_skills
 
     dataset = dataset.map(
         lambda feat, skillss, label: (
